@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import ImageCard from "./imageCard";
+import ImageCard from "./ImageCard";
 
 function App() {
   const [images, setImages] = useState([]);
