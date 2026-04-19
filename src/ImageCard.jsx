@@ -4,32 +4,45 @@ const ImageCard = ({ image }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showOverlay, setShowOverlay] = useState(false);
 
-  const handleDownload = async () => {
-    try {
-      const imageUrl = image.urls.full;
-      const response = await fetch(imageUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+ const handleDownload = async () => {
+  try {
+    const imageUrl = image.urls.full;
+    
+    // 1. Fetch request mein 'no-cors' mode ya simple fetch ki jagah 
+    // hum image ko as a blob handle karenge lekin browser ki cache use karte hue.
+    const response = await fetch(imageUrl, {
+      method: "GET",
+      headers: {},
+    });
 
-      const photographer = image.user?.name?.replace(/\s+/g, "_") || "unsplash";
-      const timestamp = new Date().getTime(); // Date.now() ka alternative jo zyada stable hai
+    if (!response.ok) throw new Error("Network response was not ok");
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `unsplash_${photographer}_${timestamp}.jpg`;
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
 
-      document.body.appendChild(link);
-      link.click();
+    const photographer = image.user?.name?.replace(/\s+/g, "_") || "unsplash";
+    const timestamp = Date.now();
 
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `unsplash_${photographer}_${timestamp}.jpg`;
 
-      showToast("Downloaded! 📸", "success");
-    } catch (error) {
-      showToast("Download failed! ❌", "error");
-      console.error("Download error:", error);
-    }
-  };
+    document.body.appendChild(link);
+    link.click();
+
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+
+    showToast("Downloaded! 📸", "success");
+  } catch (error) {
+    // Agar fetch block ho jaye (CORS), to fallback tareeka use karein
+    console.error("Download error:", error);
+    
+    // Fallback: Image ko naye tab mein khol dein
+    window.open(image.urls.full + "&dl=1", "_blank");
+    showToast("Opening image in new tab... 📸", "success");
+  }
+};
 
   const showToast = (message, type = "success") => {
     const toast = document.createElement("div");
