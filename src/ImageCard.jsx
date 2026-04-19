@@ -3,46 +3,32 @@ import { useState } from "react";
 const ImageCard = ({ image }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [showOverlay, setShowOverlay] = useState(false);
+  const handleDownload = async () => {
+    try {
+      const optimizedUrl = `${image.urls.raw}&q=80&w=2000&auto=format&fm=jpg`;
 
- const handleDownload = async () => {
-  try {
-    const imageUrl = image.urls.full;
-    
-    // 1. Fetch request mein 'no-cors' mode ya simple fetch ki jagah 
-    // hum image ko as a blob handle karenge lekin browser ki cache use karte hue.
-    const response = await fetch(imageUrl, {
-      method: "GET",
-      headers: {},
-    });
+      showToast("Processing... ⏳", "success");
 
-    if (!response.ok) throw new Error("Network response was not ok");
+      const response = await fetch(optimizedUrl);
+      if (!response.ok) throw new Error("Fetch failed");
 
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
 
-    const photographer = image.user?.name?.replace(/\s+/g, "_") || "unsplash";
-    const timestamp = Date.now();
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Photo_by_${image.user?.username || "gallery"}.jpg`;
+      document.body.appendChild(link);
+      link.click();
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `unsplash_${photographer}_${timestamp}.jpg`;
-
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    window.URL.revokeObjectURL(url);
-
-    showToast("Downloaded! 📸", "success");
-  } catch (error) {
-    // Agar fetch block ho jaye (CORS), to fallback tareeka use karein
-    console.error("Download error:", error);
-    
-    // Fallback: Image ko naye tab mein khol dein
-    window.open(image.urls.full + "&dl=1", "_blank");
-    showToast("Opening image in new tab... 📸", "success");
-  }
-};
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      showToast("Downloaded! 📸", "success");
+    } catch (error) {
+      console.error("Download error:", error);
+      window.open(image.urls.regular + "&dl=1", "_blank");
+    }
+  };
 
   const showToast = (message, type = "success") => {
     const toast = document.createElement("div");
